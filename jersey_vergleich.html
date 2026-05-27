@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jersey Preisvergleich – Deutschland 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0d0d0d; --gold: #c9a84c; --gold-dim: #7a6330;
+    --surface: #161616; --surface2: #1f1f1f; --surface3: #272727;
+    --border: rgba(201,168,76,0.2); --border-strong: rgba(201,168,76,0.5);
+    --text: #f5f3ef; --text-muted: #888; --text-dim: #555;
+    --green: #4caf7d; --red: #e05c5c; --amber: #e8a020; --blue: #5b9bd5;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; min-height: 100vh; line-height: 1.6; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2.5rem 1.5rem;
+    display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap;
+    background: linear-gradient(180deg, #111 0%, transparent 100%);
+  }
+  .header-title h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.2rem,5vw,3.8rem); letter-spacing: 0.05em; color: var(--gold); line-height: 1; }
+  .header-title p { font-size: 13px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .header-badge { margin-left: auto; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 12px; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  main { padding: 2rem 2.5rem; max-width: 1100px; margin: 0 auto; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .tab-btn { padding: 10px 20px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s; margin-bottom: -1px; }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 500; }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .tab-section { display: none; }
+  .tab-section.active { display: block; }
+
+  /* METRIC CARDS */
+  .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; position: relative; overflow: hidden; }
+  .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); }
+  .metric-card.best::before { background: var(--green); }
+  .metric-card-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .metric-card-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--gold); line-height: 1; }
+  .metric-card.best .metric-card-value { color: var(--green); }
+  .metric-card-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* WINNER */
+  .winner-banner { display: flex; align-items: center; gap: 12px; background: rgba(76,175,125,0.08); border: 1px solid rgba(76,175,125,0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 1.5rem; font-size: 14px; }
+  .winner-label { font-size: 11px; color: var(--green); text-transform: uppercase; letter-spacing: 0.08em; }
+  .winner-name { font-weight: 600; color: var(--text); }
+  .winner-price { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--green); margin-left: auto; }
+
+  .chart-container { position: relative; width: 100%; margin-bottom: 1.5rem; }
+
+  /* SHIPPING */
+  .ship-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .ship-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .ship-card.fastest { border-color: var(--border-strong); }
+  .ship-name { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+  .ship-bar-bg { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .ship-bar-fill { height: 100%; border-radius: 3px; background: var(--gold-dim); }
+  .ship-card.fastest .ship-bar-fill { background: var(--green); }
+  .ship-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .fast-tag { display: inline-block; margin-top: 8px; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+
+  /* DETAIL TABLE */
+  .detail-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(201,168,76,0.06); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .chip { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin: 1px; }
+  .chip-yes { background: rgba(76,175,125,0.12); color: var(--green); border: 1px solid rgba(76,175,125,0.25); }
+  .chip-no  { background: rgba(224,92,92,0.1); color: var(--red); border: 1px solid rgba(224,92,92,0.2); }
+
+  .note { font-size: 12px; color: var(--text-dim); margin-top: 1rem; line-height: 1.5; }
+
+  /* ===== KONFIGURATOR ===== */
+  .kfg-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 720px) { .kfg-wrap { grid-template-columns: 1fr; } }
+
+  .kfg-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .kfg-panel-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted); margin-bottom: 1rem; }
+
+  /* Texteingabe */
+  .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .search-input {
+    flex: 1; padding: 9px 13px;
+    background: var(--surface3); border: 1px solid var(--border-strong);
+    border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-btn { padding: 9px 16px; background: var(--gold); color: var(--black); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .search-btn:hover { background: #e8c96a; }
+  .parse-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 1rem; line-height: 1.6; }
+  .parse-hint span { color: var(--gold); font-family: monospace; }
+
+  /* Artikel-Stepper */
+  .article-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+  .article-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  }
+  .article-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--gold); min-width: 24px; }
+  .patch-toggle { display: flex; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; }
+  .patch-toggle button { padding: 4px 10px; background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-muted); transition: all 0.12s; }
+  .patch-toggle button.on  { background: var(--green); color: #000; font-weight: 600; }
+  .patch-toggle button.off { background: var(--red); color: #fff; font-weight: 600; }
+  .art-remove { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 0 4px; }
+  .art-remove:hover { color: var(--red); }
+  .add-article-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-btn { flex: 1; padding: 8px; background: var(--surface3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+  .add-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Deadline */
+  .deadline-row { display: flex; gap: 10px; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+  .deadline-input { padding: 8px 12px; background: var(--surface3); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+  .deadline-input:focus { border-color: var(--gold); }
+  .deadline-clear { padding: 8px 12px; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+  .deadline-clear:hover { border-color: var(--red); color: var(--red); }
+
+  /* ERGEBNIS-RANKING */
+  .kfg-result { margin-top: 1.5rem; }
+  .rank-list { display: flex; flex-direction: column; gap: 10px; }
+  .rank-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.15s;
+  }
+  .rank-card.rank-1 { border-color: var(--green); background: rgba(76,175,125,0.06); }
+  .rank-card.too-slow { border-color: var(--red); opacity: 0.55; }
+  .rank-card.borderline { border-color: var(--amber); }
+  .rank-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--text-dim); min-width: 28px; }
+  .rank-card.rank-1 .rank-pos { color: var(--green); }
+  .rank-name { font-weight: 600; font-size: 14px; }
+  .rank-price { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; margin-left: auto; }
+  .rank-card.rank-1 .rank-price { color: var(--green); }
+  .rank-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .rank-tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+  .tag-green { background: rgba(76,175,125,0.15); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
+  .tag-red   { background: rgba(224,92,92,0.12);  color: var(--red);   border: 1px solid rgba(224,92,92,0.25); }
+  .tag-amber { background: rgba(232,160,32,0.12); color: var(--amber); border: 1px solid rgba(232,160,32,0.3); }
+  .tag-gray  { background: var(--surface3); color: var(--text-muted); border: 1px solid var(--border); }
+  .ship-status { font-size: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <h1>Jersey Preisvergleich</h1>
+    <p>Deutschland 2026 Fan Edition · Adidas</p>
+  </div>
+  <div class="header-badge">6 Anbieter · Konfigurator</div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('konfig')">🔍 Konfigurator</button>
+    <button class="tab-btn" onclick="switchTab('overview')">Übersicht</button>
+    <button class="tab-btn" onclick="switchTab('chart')">Diagramm</button>
+    <button class="tab-btn" onclick="switchTab('shipping')">Versand</button>
+    <button class="tab-btn" onclick="switchTab('detail')">Details</button>
+  </div>
+
+  <!-- KONFIGURATOR -->
+  <div class="tab-section active" id="tab-konfig">
+    <div class="kfg-wrap">
+
+      <!-- LINKE SEITE: Artikelkonfiguration -->
+      <div>
+        <div class="kfg-panel">
+          <div class="kfg-panel-title">Artikel konfigurieren</div>
+          <div class="search-row">
+            <input class="search-input" id="searchInput" placeholder="z.B. 2 mit patch, 1 ohne" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')parseSearch()">
+            <button class="search-btn" onclick="parseSearch()">Übernehmen</button>
+          </div>
+          <div class="parse-hint">
+            Beispiele: <span>"3 mit patch"</span> · <span>"2 ohne, 1 mit"</span> · <span>"4 mit, 2 ohne patch"</span><br>
+            Oder unten einzeln per Klick hinzufügen:
+          </div>
+          <div class="article-list" id="articleList"></div>
+          <div class="add-article-row">
+            <button class="add-btn" onclick="addArticle(true)">＋ Mit Patch</button>
+            <button class="add-btn" onclick="addArticle(false)">＋ Ohne Patch</button>
+          </div>
+        </div>
+
+        <div class="kfg-panel" style="margin-top:1rem;">
+          <div class="kfg-panel-title">Lieferdeadline</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Anbieter die zu spät liefern werden rot markiert.</p>
+          <div class="deadline-row">
+            <input type="date" class="deadline-input" id="deadlineInput" oninput="computeRanking()">
+            <button class="deadline-clear" onclick="clearDeadline()">✕ Löschen</button>
+          </div>
+          <div id="deadlineStatus" style="font-size:12px;color:var(--text-dim);margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- RECHTE SEITE: Ergebnis -->
+      <div class="kfg-result">
+        <div class="kfg-panel-title" style="font-size:11px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:1rem;">Ranking – günstigster Anbieter zuerst</div>
+        <div class="rank-list" id="rankList">
+          <div style="color:var(--text-dim);font-size:14px;padding:1rem 0;">Konfiguriere deine Bestellung links, um das Ranking zu sehen.</div>
+        </div>
+        <p class="note" id="kfgNote"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ÜBERSICHT -->
+  <div class="tab-section" id="tab-overview">
+    <div class="metric-row" id="metricRow"></div>
+    <div class="winner-banner" id="winnerBanner">
+      <span style="font-size:20px;">🏆</span>
+      <div>
+        <div class="winner-label">Günstigster Anbieter</div>
+        <div class="winner-name" id="winnerName">–</div>
+      </div>
+      <div class="winner-price" id="winnerPrice">–</div>
+    </div>
+    <div class="chart-container" style="height:280px;">
+      <canvas id="chartOverview" role="img" aria-label="Preise je Anbieter">Preisübersicht.</canvas>
+    </div>
+  </div>
+
+  <!-- DIAGRAMM -->
+  <div class="tab-section" id="tab-chart">
+    <div class="chart-container" style="height:360px;">
+      <canvas id="chartCompare" role="img" aria-label="Preisverlauf je Anzahl Artikel">Preisverlauf.</canvas>
+    </div>
+    <p class="note">Preisverlauf 1–10 Artikel je Anbieter (mit günstigster Patch-Option).</p>
+  </div>
+
+  <!-- VERSAND -->
+  <div class="tab-section" id="tab-shipping">
+    <div class="ship-grid" id="shipGrid"></div>
+    <p class="note" style="margin-top:1.5rem;">* topjersey.ru: kostenfrei ab ~50 USD Bestellwert.</p>
+  </div>
+
+  <!-- DETAILS -->
+  <div class="tab-section" id="tab-detail">
+    <div class="detail-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Anbieter</th><th>Basis</th><th>Beflockung</th><th>Patch-Optionen</th><th>Versand</th><th>Getestet?</th>
+          </tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+const DATA = [
+  {
+    name: 'jerseysu.ru',
+    base: 15.84, flock: 3.53,
+    patches: [{ label: 'WC 2026 Patch', price: 3.53 }],
+    shipFee: 2.65, freeFrom: 2, freeLabel: 'ab 2 Artikeln',
+    price1: 22.02, price2: 38.74,
+    days: '14–20', daysMin: 14, daysMax: 20, tried: true,
+  },
+  {
+    name: 'soccereurs.com',
+    base: 9.71, flock: 4.30,
+    patches: [{ label: 'Nations League', price: 5.15 },{ label: 'WC Qualification', price: 5.15 },{ label: 'WC Qual. + UEFA 10yr', price: 6.87 }],
+    shipFee: 5.15, freeFrom: 3, freeLabel: 'ab 3 Artikeln',
+    price1: 20.01, price2: 34.87,
+    days: '7–10', daysMin: 7, daysMax: 10, tried: true,
+  },
+  {
+    name: 'ucljersey.shop',
+    base: 15.38, flock: 4.29,
+    patches: [{ label: 'WC Patch', price: 2.58 }],
+    shipFee: 4.65, freeFrom: 2, freeLabel: 'ab 2 Artikeln',
+    price1: 22.26, price2: 35.92,
+    days: '14–20', daysMin: 14, daysMax: 20, tried: true,
+  },
+  {
+    name: 'topjersey.ru',
+    base: 13.12, flock: 4.28,
+    patches: [{ label: 'Individuell wählbar', price: 4.02 }],
+    shipFee: 2.31, freeFrom: 99, freeLabel: 'ab ~50 USD',
+    price1: 19.35, price2: 36.59,
+    days: '14–20', daysMin: 14, daysMax: 20, tried: false,
+  },
+  {
+    name: 'futgy.com',
+    base: 19.90, flock: 3.90,
+    patches: [{ label: 'WC Patch (kostenlos)', price: 0 }],
+    shipFee: 0, freeFrom: 1, freeLabel: 'immer kostenlos',
+    price1: 19.90, price2: 39.80,
+    days: '14–20', daysMin: 14, daysMax: 20, tried: true,
+  },
+  {
+    name: 'kitjj2.com',
+    base: 13.15, flock: 2.71,
+    patches: [{ label: 'WC Gold Patch', price: 0.90 },{ label: 'UEFA 10yr + WC Qual.', price: 1.80 },{ label: 'Nations League', price: 1.35 }],
+    shipFee: 5.41, freeFrom: 99, freeLabel: 'nie kostenlos',
+    price1: 19.41, price2: 33.51,
+    days: '14–20', daysMin: 14, daysMax: 20, tried: true,
+  }
+];
+
+const LINE_COLORS = ['#c9a84c','#5b9bd5','#e07a3b','#9b7ed6','#4caf7d','#e05c5c'];
+
+// articles = [{patch: true/false}, ...]
+let articles = [];
+let charts = {};
+
+// ─── PRICE CALC ───────────────────────────────────────────────
+function calcMixed(d, arts) {
+  if (arts.length === 0) return 0;
+  const n = arts.length;
+  const nPatch = arts.filter(a => a.patch).length;
+  const nNoPatch = n - nPatch;
+  const cheapestPatch = d.patches.reduce((m,p) => Math.min(m, p.price), Infinity);
+  const patchCost = nPatch * (d.base + d.flock + cheapestPatch);
+  const noPatchCost = nNoPatch * (d.base + d.flock);
+  const ship = n >= d.freeFrom ? 0 : d.shipFee;
+  return parseFloat((patchCost + noPatchCost + ship).toFixed(2));
+}
+
+function getPriceN(d, n, withPatch) {
+  if (n === 1) return withPatch ? d.price1 : (d.price1 - d.patches[0].price);
+  if (n === 2) return withPatch ? d.price2 : (d.price2 - d.patches[0].price * 2);
+  const patch = withPatch ? d.patches[0].price * n : 0;
+  const ship = n >= d.freeFrom ? 0 : d.shipFee;
+  return parseFloat((d.base * n + d.flock * n + patch + ship).toFixed(2));
+}
+
+// ─── ARTIKEL STEPPER ─────────────────────────────────────────
+function renderArticles() {
+  const list = document.getElementById('articleList');
+  if (articles.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 0;">Noch keine Artikel. Füge welche hinzu.</div>';
+    return;
+  }
+  list.innerHTML = articles.map((a, i) => `
+    <div class="article-item">
+      <span class="article-num">${i + 1}</span>
+      <div class="patch-toggle">
+        <button class="${a.patch ? 'on' : ''}" onclick="setArticlePatch(${i}, true)">Mit Patch</button>
+        <button class="${!a.patch ? 'off' : ''}" onclick="setArticlePatch(${i}, false)">Ohne</button>
+      </div>
+      <button class="art-remove" onclick="removeArticle(${i})" title="Entfernen">×</button>
+    </div>
+  `).join('');
+}
+
+function addArticle(patch) {
+  articles.push({ patch });
+  renderArticles();
+  computeRanking();
+}
+
+function removeArticle(i) {
+  articles.splice(i, 1);
+  renderArticles();
+  computeRanking();
+}
+
+function setArticlePatch(i, patch) {
+  articles[i].patch = patch;
+  renderArticles();
+  computeRanking();
+}
+
+// ─── TEXTEINGABE PARSER ──────────────────────────────────────
+function liveSearch(val) {
+  // just visual feedback, actual parse on Enter/button
+}
+
+function parseSearch() {
+  const raw = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (!raw) return;
+
+  const newArts = [];
+
+  // patterns: "2 mit patch", "3 ohne", "1 mit, 2 ohne patch", etc.
+  const segments = raw.split(/[,;]+/);
+  for (const seg of segments) {
+    const numMatch = seg.match(/(\d+)/);
+    const n = numMatch ? parseInt(numMatch[1]) : 1;
+    const hasPatch = /mit|with|ja|yes|patch/.test(seg) && !/ohne|without|nein|no/.test(seg);
+    const noPatch = /ohne|without|nein|no/.test(seg);
+    if (!numMatch && !hasPatch && !noPatch) continue;
+    for (let i = 0; i < n; i++) newArts.push({ patch: !noPatch });
+  }
+
+  if (newArts.length > 0) {
+    articles = newArts;
+    renderArticles();
+    computeRanking();
+    document.getElementById('searchInput').value = '';
+  }
+}
+
+// ─── DEADLINE ────────────────────────────────────────────────
+function clearDeadline() {
+  document.getElementById('deadlineInput').value = '';
+  document.getElementById('deadlineStatus').textContent = '';
+  computeRanking();
+}
+
+function getDeadlineDays() {
+  const val = document.getElementById('deadlineInput').value;
+  if (!val) return null;
+  const deadline = new Date(val);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diff = Math.round((deadline - today) / 86400000);
+  const el = document.getElementById('deadlineStatus');
+  if (diff < 0) { el.textContent = '⚠ Datum liegt in der Vergangenheit.'; el.style.color = 'var(--red)'; return null; }
+  el.textContent = `Noch ${diff} Tage bis zur Deadline.`;
+  el.style.color = diff <= 10 ? 'var(--amber)' : 'var(--green)';
+  return diff;
+}
+
+// ─── RANKING ─────────────────────────────────────────────────
+function computeRanking() {
+  const deadlineDays = getDeadlineDays();
+  const list = document.getElementById('rankList');
+  const noteEl = document.getElementById('kfgNote');
+
+  if (articles.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;padding:1rem 0;">Konfiguriere deine Bestellung links, um das Ranking zu sehen.</div>';
+    noteEl.textContent = '';
+    return;
+  }
+
+  const nPatch = articles.filter(a => a.patch).length;
+  const nNoPatch = articles.length - nPatch;
+
+  const results = DATA.map(d => {
+    const price = calcMixed(d, articles);
+    // shipping status
+    let shipStatus = 'ok'; // ok, borderline, too-slow
+    if (deadlineDays !== null) {
+      if (d.daysMin > deadlineDays) shipStatus = 'too-slow';
+      else if (d.daysMax > deadlineDays) shipStatus = 'borderline';
+    }
+    return { d, price, shipStatus };
+  });
+
+  // sort: too-slow last, then by price
+  results.sort((a, b) => {
+    if (a.shipStatus === 'too-slow' && b.shipStatus !== 'too-slow') return 1;
+    if (b.shipStatus === 'too-slow' && a.shipStatus !== 'too-slow') return -1;
+    return a.price - b.price;
+  });
+
+  let rank = 1;
+  list.innerHTML = results.map((r, i) => {
+    const { d, price, shipStatus } = r;
+    const isTooSlow = shipStatus === 'too-slow';
+    const isBorderline = shipStatus === 'borderline';
+    const isFirst = i === 0 && !isTooSlow;
+    const cardClass = isFirst ? 'rank-1' : isTooSlow ? 'too-slow' : isBorderline ? 'borderline' : '';
+
+    const tags = [];
+    if (nPatch > 0) tags.push(`<span class="rank-tag tag-green">${nPatch}× mit Patch</span>`);
+    if (nNoPatch > 0) tags.push(`<span class="rank-tag tag-gray">${nNoPatch}× ohne Patch</span>`);
+    const ship = articles.length >= d.freeFrom ? '<span class="rank-tag tag-green">Versand kostenlos</span>' : `<span class="rank-tag tag-gray">+${d.shipFee.toFixed(2)} € Versand</span>`;
+    tags.push(ship);
+
+    let shipIcon = '✅';
+    let shipTag = `<span class="rank-tag tag-green">${d.days} Tage</span>`;
+    if (isTooSlow) { shipIcon = '❌'; shipTag = `<span class="rank-tag tag-red">Zu langsam · ${d.days} Tage</span>`; }
+    else if (isBorderline) { shipIcon = '⚠️'; shipTag = `<span class="rank-tag tag-amber">Knapp · ${d.days} Tage</span>`; }
+    else if (deadlineDays !== null) { shipTag = `<span class="rank-tag tag-green">Rechtzeitig · ${d.days} Tage</span>`; }
+    else { shipTag = `<span class="rank-tag tag-gray">${d.days} Tage</span>`; }
+    tags.push(shipTag);
+
+    if (!d.tried) tags.push('<span class="rank-tag tag-amber">Noch nicht getestet</span>');
+
+    const posLabel = isTooSlow ? '–' : String(rank++);
+
+    return `<div class="rank-card ${cardClass}">
+      <div class="rank-pos">${posLabel}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="rank-name">${d.name} <span class="ship-status">${deadlineDays !== null ? shipIcon : ''}</span></div>
+        <div class="rank-tags">${tags.join('')}</div>
+      </div>
+      <div class="rank-price">${price.toFixed(2)} €</div>
+    </div>`;
+  }).join('');
+
+  const summary = `${articles.length} Artikel (${nPatch} mit Patch, ${nNoPatch} ohne Patch)${deadlineDays !== null ? ` · Deadline in ${deadlineDays} Tagen` : ''}`;
+  noteEl.textContent = '* ' + summary + '. Ab 3+ Artikeln extrapoliert.';
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(tab) {
+  const tabs = ['konfig','overview','chart','shipping','detail'];
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', tabs[i]===tab));
+  document.querySelectorAll('.tab-section').forEach((s,i) => s.classList.toggle('active', 'tab-'+tabs[i]==='tab-'+tab));
+  if (tab === 'overview') renderOverview();
+  if (tab === 'chart') renderCompareChart();
+  if (tab === 'shipping') renderShipping();
+  if (tab === 'detail') renderDetail();
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────────
+function renderOverview() {
+  const prices1 = DATA.map(d => d.price1);
+  const prices2 = DATA.map(d => d.price2);
+  const best1 = Math.min(...prices1), best1idx = prices1.indexOf(best1);
+  const best2 = Math.min(...prices2), best2idx = prices2.indexOf(best2);
+  const fastMin = Math.min(...DATA.map(d=>d.daysMin));
+  const fastIdx = DATA.findIndex(d=>d.daysMin===fastMin);
+
+  document.getElementById('metricRow').innerHTML = `
+    <div class="metric-card best"><div class="metric-card-label">Günstigster · 1 Artikel</div><div class="metric-card-value">${best1.toFixed(2)} €</div><div class="metric-card-sub">${DATA[best1idx].name}</div></div>
+    <div class="metric-card best"><div class="metric-card-label">Günstigster · 2 Artikel</div><div class="metric-card-value">${best2.toFixed(2)} €</div><div class="metric-card-sub">${DATA[best2idx].name}</div></div>
+    <div class="metric-card"><div class="metric-card-label">Schnellste Lieferung</div><div class="metric-card-value">${fastMin}–10 Tage</div><div class="metric-card-sub">${DATA[fastIdx].name}</div></div>`;
+
+  const minIdx = prices1.indexOf(Math.min(...prices1));
+  document.getElementById('winnerName').textContent = DATA[minIdx].name + ' — 1 Artikel';
+  document.getElementById('winnerPrice').textContent = prices1[minIdx].toFixed(2) + ' €';
+
+  if (charts.overview) charts.overview.destroy();
+  charts.overview = new Chart(document.getElementById('chartOverview').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: DATA.map(d=>d.name.replace('.com','').replace('.ru','').replace('.shop','')),
+      datasets: [
+        { label: '1 Artikel', data: prices1, borderColor: '#c9a84c', backgroundColor: 'transparent', pointBackgroundColor: prices1.map((_,i)=>i===best1idx?'#4caf7d':'#c9a84c'), pointRadius: prices1.map((_,i)=>i===best1idx?8:5), borderWidth: 2, tension: 0.3 },
+        { label: '2 Artikel', data: prices2, borderColor: '#5b9bd5', backgroundColor: 'transparent', pointBackgroundColor: prices2.map((_,i)=>i===best2idx?'#4caf7d':'#5b9bd5'), pointRadius: prices2.map((_,i)=>i===best2idx?8:4), borderWidth: 2, tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: '#888', boxWidth: 12 } }, tooltip: { callbacks: { label: i => i.dataset.label + ': ' + i.raw.toFixed(2) + ' €' } } },
+      scales: {
+        x: { ticks: { color: '#888', font: {size:12}, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#888', callback: v => v + ' €' }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: false }
+      }
+    }
+  });
+}
+
+// ─── COMPARE CHART ───────────────────────────────────────────
+function renderCompareChart() {
+  if (charts.compare) charts.compare.destroy();
+  const xLabels = Array.from({length: 10}, (_,i) => i+1);
+  charts.compare = new Chart(document.getElementById('chartCompare').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: xLabels.map(n => n + ' Stk.'),
+      datasets: DATA.map((d,i) => ({
+        label: d.name,
+        data: xLabels.map(n => parseFloat(getPriceN(d, n, true).toFixed(2))),
+        borderColor: LINE_COLORS[i], backgroundColor: 'transparent',
+        pointBackgroundColor: LINE_COLORS[i], pointRadius: 4, pointHoverRadius: 6,
+        borderWidth: 2, tension: 0.3,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#888', font: {size:12}, boxWidth: 12, padding: 16 } },
+        tooltip: { callbacks: { label: i => i.dataset.label + ': ' + i.raw.toFixed(2) + ' €' } }
+      },
+      scales: {
+        x: { ticks: { color: '#888', font: {size:12}, autoSkip: false }, grid: { color:'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#888', callback: v=>v+' €' }, grid: { color:'rgba(255,255,255,0.06)' }, beginAtZero: false }
+      }
+    }
+  });
+}
+
+// ─── SHIPPING ────────────────────────────────────────────────
+function renderShipping() {
+  const fastest = Math.min(...DATA.map(d=>d.daysMin));
+  document.getElementById('shipGrid').innerHTML = DATA.map(d => {
+    const isFast = d.daysMin === fastest;
+    const pct = Math.round((fastest / d.daysMin) * 100);
+    return `<div class="ship-card ${isFast?'fastest':''}">
+      <div class="ship-name">${d.name}</div>
+      <div class="ship-bar-bg"><div class="ship-bar-fill" style="width:${pct}%"></div></div>
+      <div class="ship-row">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ${d.days} Tage
+      </div>
+      <div class="ship-row">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Kostenlos: ${d.freeLabel}
+      </div>
+      ${isFast ? '<span class="fast-tag">⚡ Schnellste Lieferung</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── DETAIL ──────────────────────────────────────────────────
+function renderDetail() {
+  document.getElementById('detailBody').innerHTML = DATA.map(d => {
+    const patchList = d.patches.map(p=>`<span class="chip chip-yes">${p.label}${p.price>0?' +'+p.price.toFixed(2)+'€':' kostenlos'}</span>`).join('');
+    return `<tr>
+      <td style="font-weight:600">${d.name}</td>
+      <td>${d.base.toFixed(2)} €</td>
+      <td>${d.flock.toFixed(2)} €</td>
+      <td>${patchList}</td>
+      <td>${d.shipFee>0?d.shipFee.toFixed(2)+' €':'kostenlos'}<br><span style="font-size:11px;color:var(--text-dim)">${d.freeLabel}</span></td>
+      <td><span class="chip ${d.tried?'chip-yes':'chip-no'}">${d.tried?'Ja':'Nein'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// INIT
+renderArticles();
+</script>
+</body>
+</html>
